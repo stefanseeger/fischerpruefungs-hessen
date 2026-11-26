@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Probeklausur Fischerprüfung Hessen</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-badge">HE</span>
+        <div>
+          <div class="brand-title">Fischerprüfung Hessen</div>
+          <div class="brand-sub">Probeklausur nach Prüfungsordnung (HFischV)</div>
+        </div>
+      </div>
+
+      <div class="header-stats">
+        <span class="stat-pill" id="catalogStat">Fragenkatalog: 563 Fragen</span>
+        <button class="btn btn-ghost small" id="themeToggleBtn" title="Farbschema wechseln">
+          ☀️ Hell
+        </button>
+        <button class="btn btn-ghost small" id="shareProgressBtn" title="Lernstand per QR-Code teilen">
+          Lernstand teilen
+        </button>
+        <button class="btn btn-ghost small" id="resetProgressBtn" title="Gespeicherten Lernstand löschen">
+          Lernstand zurücksetzen
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <div id="syncImportBanner" class="card sync-banner hidden">
+      <div>
+        <strong>Lernstand von anderem Gerät empfangen</strong>
+        <p class="muted small" id="syncImportSummary"></p>
+      </div>
+      <div class="sync-banner-actions">
+        <button id="syncMergeBtn" class="btn btn-primary">Zusammenführen</button>
+        <button id="syncReplaceBtn" class="btn btn-secondary">Ersetzen</button>
+        <button id="syncCancelBtn" class="btn btn-ghost">Verwerfen</button>
+      </div>
+    </div>
+
+    <section id="view-exam" class="view active">
+      <!-- Exam Start Screen -->
+      <div id="examStartScreen" class="card exam-start">
+        <div class="exam-hero">
+          <span class="badge badge-accent">Offizielle Prüfungsordnung Hessen (HFischV)</span>
+          <h1>Probeklausur Fischerprüfung Hessen</h1>
+          <p class="muted">
+            Simuliere eine vollständige Prüfung unter realistischen Bedingungen mit Zeitlimit und
+            offizieller Auswertung nach allen 5 Sachgebieten.
+          </p>
+        </div>
+
+        <div class="rules-grid">
+          <div class="rule-box">
+            <div class="rule-value">60 Fragen</div>
+            <div class="rule-label">12 Fragen je Sachgebiet (Zufallsauswahl aus 563 Fragen)</div>
+          </div>
+          <div class="rule-box">
+            <div class="rule-value">120 Min.</div>
+            <div class="rule-label">Offizielles Zeitlimit mit automatischer Abgabe</div>
+          </div>
+          <div class="rule-box">
+            <div class="rule-value">≥ 45 / 60</div>
+            <div class="rule-label">Mindestens 45 richtige Antworten insgesamt</div>
+          </div>
+          <div class="rule-box">
+            <div class="rule-value">≥ 9 / 12</div>
+            <div class="rule-label">Mindestens 9 Richtige in jedem der 5 Sachgebiete</div>
+          </div>
+        </div>
+
+        <div class="exam-start-actions">
+          <button id="startExamBtn" class="btn btn-primary btn-lg">Probeklausur jetzt starten</button>
+          <button id="startRandomBtn" class="btn btn-secondary btn-lg">Zufällige Fragen üben</button>
+        </div>
+
+        <div id="randomPromptBox" class="random-prompt hidden">
+          <h3>Welche Fragen möchtest du zufällig beantworten?</h3>
+          <p class="muted small">Sachgebiete auswählen (standardmäßig alle aktiv):</p>
+          <div id="randomCategoryCheckboxes" class="random-cat-grid"></div>
+          <p class="muted small" id="randomPromptMsg">Wähle den gewünschten Fragen-Pool aus:</p>
+          <div class="random-prompt-options">
+            <button class="btn btn-secondary" data-random-mode="unanswered" id="randomModeUnanswered">
+              Nur offene Fragen
+            </button>
+            <button class="btn btn-secondary" data-random-mode="wrong" id="randomModeWrong">
+              Nur falsch beantwortete
+            </button>
+            <button class="btn btn-primary" data-random-mode="all" id="randomModeAll">
+              Alle Fragen
+            </button>
+            <button class="btn btn-ghost" id="randomPromptCancel">Abbrechen</button>
+          </div>
+        </div>
+
+        <div id="examHistoryBox" class="exam-history hidden">
+          <h3>Letzte Probeklausuren</h3>
+          <div id="examHistoryList" class="history-list"></div>
+        </div>
+      </div>
+
+      <!-- Searchable Question Catalog -->
+      <div id="catalogSearchSection" class="card catalog-search-card">
+        <div class="catalog-search-header">
+          <div>
+            <h2>Fragenkatalog durchsuchen</h2>
+            <p class="muted small">
+              Suche nach Stichworten, Antworten oder Fragennummern und wähle gezielt einzelne Fragen zum Üben aus.
+            </p>
+          </div>
+          <span class="badge badge-info" id="catalogMatchCount">563 Treffer</span>
+        </div>
+
+        <div class="catalog-search-controls">
+          <input
+            type="search"
+            id="catalogSearchInput"
+            class="search-input"
+            placeholder="Frage, Antwort oder Nummer suchen (z. B. Äsche, Laichzeit, 109)..."
+            autocomplete="off"
+          />
+          <select id="catalogCategoryFilter" class="select-input" aria-label="Sachgebiet filtern">
+            <option value="all">Alle Sachgebiete</option>
+          </select>
+          <select id="catalogStatusFilter" class="select-input" aria-label="Antwortstatus filtern">
+            <option value="all">Alle Status</option>
+            <option value="correct">Richtig beantwortet</option>
+            <option value="wrong">Falsch beantwortet</option>
+            <option value="unanswered">Noch unbeantwortet</option>
+          </select>
+        </div>
+
+        <div id="catalogSelectedQuestion" class="catalog-selected hidden"></div>
+        <div id="catalogResultsList" class="catalog-results-list"></div>
+      </div>
+
+      <!-- Random Practice Screen -->
+      <div id="randomPracticeScreen" class="card random-practice hidden">
+        <div class="random-practice-head">
+          <div class="exam-progress-info">
+            <span class="badge badge-accent" id="randomCategoryBadge">Kategorie</span>
+            <span class="muted" id="randomProgressText">Frage 1 / 10 · Richtig: 0</span>
+          </div>
+          <button id="exitRandomBtn" class="btn btn-ghost">← Zurück</button>
+        </div>
+
+        <h2 class="question-text" id="randomQuestionText">Frage...</h2>
+        <div id="randomOptionsList" class="options-list"></div>
+        <div id="randomFeedbackSlot"></div>
+
+        <div class="quiz-footer">
+          <span class="muted small" id="randomCatalogNum">Katalog-Nr.</span>
+          <button id="randomNextBtn" class="btn btn-primary hidden">Nächste Frage →</button>
+        </div>
+        <p class="muted small shortcut-hint">Tastatur: <strong>1–3</strong> Antwort · <strong>Enter</strong> Nächste Frage</p>
+      </div>
+
+      <!-- Exam Active Screen -->
+      <div id="examActiveScreen" class="hidden">
+        <div class="exam-sticky-bar card">
+          <div class="exam-progress-info">
+            <span class="badge badge-info" id="examQuestionCounter">Frage 1 / 60</span>
+            <span class="muted" id="examAnsweredCounter">0 / 60 beantwortet</span>
+          </div>
+          <div class="exam-timer" id="examTimer">120:00</div>
+          <div class="exam-bar-actions">
+            <button id="submitExamBtn" class="btn btn-danger">Klausur abgeben</button>
+          </div>
+        </div>
+
+        <div class="exam-layout">
+          <div class="card exam-question-card">
+            <div class="question-meta">
+              <span class="badge badge-accent" id="examCurrentCategory">Kategorie</span>
+              <span class="muted" id="examCatalogNumber">Katalog-Nr.</span>
+            </div>
+            <h2 class="question-text" id="examQuestionText">Frage...</h2>
+            <div id="examOptionsList" class="options-list"></div>
+
+            <div class="exam-nav-footer">
+              <button id="examPrevBtn" class="btn btn-secondary">← Zurück</button>
+              <button id="flagExamQuestionBtn" class="btn btn-ghost">☆ Markieren</button>
+              <button id="examNextBtn" class="btn btn-primary">Weiter →</button>
+            </div>
+            <p class="muted small shortcut-hint">Tastatur: <strong>1–3</strong> Antwort · <strong>4</strong> Markieren · <strong>Enter</strong> Nächste Frage</p>
+          </div>
+
+          <aside class="card exam-navigator">
+            <h3>Fragenübersicht</h3>
+            <p class="muted small">Grün = beantwortet · Gelb = markiert (offen) · Blau = markiert &amp; beantwortet</p>
+            <div id="examNavGrid" class="exam-nav-grid"></div>
+          </aside>
+        </div>
+      </div>
+
+      <!-- Exam Results Screen -->
+      <div id="examResultsScreen" class="hidden">
+        <div class="card result-banner" id="resultBanner"></div>
+
+        <div class="card">
+          <h2>Auswertung nach Sachgebieten (mind. 9 / 12 erforderlich)</h2>
+          <div id="categoryResultsGrid" class="category-results-grid"></div>
+        </div>
+
+        <div class="card">
+          <div class="review-header">
+            <h2>Detailauswertung aller 60 Fragen</h2>
+            <div class="review-filters">
+              <button class="btn btn-secondary active" data-review-filter="all">Alle (60)</button>
+              <button class="btn btn-secondary" data-review-filter="correct">Nur Richtig</button>
+              <button class="btn btn-secondary" data-review-filter="wrong">Nur Fehler</button>
+              <select id="reviewCategoryFilter" class="select-input">
+                <option value="all">Alle Sachgebiete</option>
+              </select>
+              <button id="backToStartFromResultsBtn" class="btn btn-ghost">← Startseite</button>
+              <button id="restartExamBtn" class="btn btn-primary">Neue Probeklausur</button>
+            </div>
+          </div>
+          <div id="examReviewList" class="review-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p>
+        <strong>Quelle des Fragenkatalogs:</strong>
+        <a href="https://landwirtschaft.hessen.de/wasser/fischerei" target="_blank" rel="noopener noreferrer">
+          Hessisches Ministerium für Landwirtschaft und Umwelt – Fischerei
+        </a>
+      </p>
+      <p>
+        <strong>Verwendete Fragen (Jahr 2025):</strong>
+        <a
+          href="https://landwirtschaft.hessen.de/sites/landwirtschaft.hessen.de/files/2025-06/fischerpruefungsfragen_und-antworten_hessen_mit_loesungen.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Fischerprüfungsfragen und -antworten Hessen mit Lösungen (PDF, 2025)
+        </a>
+      </p>
+    </div>
+  </footer>
+
+  <div id="shareModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
+    <div class="card modal-card">
+      <div class="modal-head">
+        <h2 id="shareModalTitle">Lernstand teilen</h2>
+        <button id="closeShareModalBtn" class="btn btn-ghost small">✕</button>
+      </div>
+      <p class="muted small">
+        Scanne diesen QR-Code mit deinem anderen Gerät (z. B. Handy), um deinen aktuellen Lernstand
+        (richtige/falsche Fragen &amp; letzte Klausurergebnisse) zu synchronisieren.
+      </p>
+      <div id="qrCodeContainer" class="qr-box"></div>
+      <div class="sync-url-row">
+        <input type="text" id="syncUrlInput" class="search-input" readonly />
+        <button id="copySyncUrlBtn" class="btn btn-primary">Link kopieren</button>
+      </div>
+      <p class="muted small" id="copySyncFeedback"></p>
+    </div>
+  </div>
+
+  <script src="./qrcode.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
